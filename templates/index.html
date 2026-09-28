@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ระบบตรวจวัดระดับความรุนแรงโรคไหม้ในใบข้าว</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:#f2f6f1;color:#1f2d1f;line-height:1.7}
+header{background:linear-gradient(135deg,#2e7d32,#66bb6a);color:#fff;padding:32px 20px;text-align:center}
+header h1{font-size:26px;margin-bottom:6px}
+header p{opacity:.9;font-size:14px}
+.wrap{max-width:1080px;margin:0 auto;padding:24px 16px 60px}
+.card{background:#fff;border-radius:14px;padding:22px;margin-bottom:18px;box-shadow:0 2px 12px rgba(0,0,0,.07)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+#drop{border:2px dashed #81c784;border-radius:12px;padding:44px 20px;text-align:center;cursor:pointer;transition:.2s;background:#fafdf9}
+#drop:hover,#drop.over{background:#e8f5e9;border-color:#2e7d32}
+#preview{max-width:100%;border-radius:10px;margin-top:14px;display:none}
+button{width:100%;padding:14px;margin-top:14px;border:0;border-radius:10px;background:#2e7d32;color:#fff;font-family:inherit;font-size:16px;font-weight:600;cursor:pointer}
+button:disabled{background:#bdbdbd;cursor:not-allowed}
+.tips{font-size:14px;background:#fffde7;border-left:4px solid #fbc02d;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px}
+.tips li{margin-left:18px}
+.badge{display:inline-block;padding:8px 18px;border-radius:30px;color:#fff;font-weight:700;font-size:18px}
+.l0{background:#43a047}.l1{background:#fbc02d;color:#333}.l2{background:#fb8c00}.l3{background:#e53935}
+.bar{height:22px;background:#eceff1;border-radius:11px;overflow:hidden;margin:4px 0 10px}
+.bar>div{height:100%;background:linear-gradient(90deg,#66bb6a,#2e7d32);text-align:right;color:#fff;font-size:12px;padding-right:8px;line-height:22px}
+.warn{background:#ffebee;border-left:4px solid #e53935;padding:10px 14px;border-radius:0 8px 8px 0;margin:8px 0;font-size:14px}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:15px}
+td,th{padding:8px;border-bottom:1px solid #eee;text-align:left}
+.imgs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.imgs img{width:100%;border-radius:8px;border:1px solid #ddd}
+.imgs p{font-size:13px;text-align:center;color:#666;margin-top:4px}
+#result{display:none}
+.spin{text-align:center;padding:30px;display:none}
+select{width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;font-family:inherit;margin-top:8px}
+</style>
+</head>
+<body>
+<header>
+  <h1>ระบบตรวจวัดระดับความรุนแรงของโรคไหม้ในใบข้าว</h1>
+  <p>อัปโหลดภาพถ่ายใบข้าว เพื่อประเมินระดับความรุนแรงโดยอัตโนมัติ</p>
+</header>
+
+<div class="wrap">
+<div class="grid">
+
+  <div class="card">
+    <h3>อัปโหลดภาพ</h3>
+    <div id="drop">
+      <div style="font-size:42px">🌾</div>
+      <p><b>คลิกเพื่อเลือกไฟล์</b> หรือลากภาพมาวางที่นี่</p>
+      <p style="font-size:13px;color:#777">รองรับ JPG, PNG</p>
+      <input type="file" id="file" accept="image/*" hidden>
+    </div>
+    <img id="preview">
+    <select id="truelabel">
+      <option>ไม่ระบุ</option>
+      <option value="0">ทราบระดับจริง: 0</option>
+      <option value="1">ทราบระดับจริง: 1</option>
+      <option value="2">ทราบระดับจริง: 2</option>
+      <option value="3">ทราบระดับจริง: 3</option>
+    </select>
+    <button id="go" disabled>วิเคราะห์ภาพ</button>
+    <div class="tips">
+      <b>คำแนะนำในการถ่ายภาพ</b>
+      <ul>
+        <li>วางใบข้าวบนพื้นหลังสีขาวเรียบ</li>
+        <li>ถ่ายในที่ที่มีแสงสม่ำเสมอ ไม่มีเงาทับ</li>
+        <li>ให้ใบอยู่เต็มเฟรม และมีเพียงใบเดียว</li>
+        <li>โฟกัสให้ชัด ไม่สั่นไหว</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>ผลการวิเคราะห์</h3>
+    <div class="spin" id="spin">กำลังประมวลผล...</div>
+    <p id="empty" style="color:#888;padding:30px 0;text-align:center">ยังไม่มีผลการวิเคราะห์</p>
+    <div id="result">
+      <div id="badge"></div>
+      <p id="advice" style="margin:12px 0"></p>
+      <div id="warns"></div>
+      <h4 style="margin-top:16px">ความน่าจะเป็นของแต่ละระดับ</h4>
+      <div id="bars"></div>
+      <table><tbody id="stats"></tbody></table>
+      <div class="imgs">
+        <div><img id="vis"><p>บริเวณแผลที่ตรวจพบ (สีแดง)</p></div>
+        <div><img id="mask"><p>ขอบเขตใบที่แยกได้</p></div>
+      </div>
+      <p style="font-size:13px;color:#777;margin-top:10px">
+        หากขอบเขตใบในภาพด้านบนไม่ถูกต้อง ผลการประเมินอาจคลาดเคลื่อน ควรถ่ายภาพใหม่
+      </p>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+const drop=document.getElementById('drop'), file=document.getElementById('file'),
+      prev=document.getElementById('preview'), go=document.getElementById('go');
+let picked=null;
+
+drop.onclick=()=>file.click();
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('over')};
+drop.ondragleave=()=>drop.classList.remove('over');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');set(e.dataTransfer.files[0])};
+file.onchange=e=>set(e.target.files[0]);
+
+function set(f){
+  if(!f||!f.type.startsWith('image/'))return;
+  picked=f; go.disabled=false;
+  const r=new FileReader();
+  r.onload=e=>{prev.src=e.target.result;prev.style.display='block'};
+  r.readAsDataURL(f);
+}
+
+go.onclick=async()=>{
+  if(!picked)return;
+  go.disabled=true;
+  document.getElementById('empty').style.display='none';
+  document.getElementById('result').style.display='none';
+  document.getElementById('spin').style.display='block';
+
+  const fd=new FormData();
+  fd.append('file',picked);
+  fd.append('true_label',document.getElementById('truelabel').value);
+
+  try{
+    const res=await fetch('/api/predict',{method:'POST',body:fd});
+    const d=await res.json();
+    document.getElementById('spin').style.display='none';
+    if(!res.ok){
+      document.getElementById('empty').style.display='block';
+      document.getElementById('empty').innerHTML='<div class="warn">'+(d.error||'เกิดข้อผิดพลาด')+'</div>';
+      go.disabled=false; return;
+    }
+    document.getElementById('badge').innerHTML=
+      `<span class="badge l${d.level}">ระดับ ${d.level} — ${d.name}</span>
+       <p style="margin-top:10px">ความมั่นใจของระบบ: <b>${(d.confidence*100).toFixed(1)}%</b></p>`;
+    document.getElementById('advice').textContent=d.advice;
+
+    document.getElementById('warns').innerHTML=
+      d.warnings.map(w=>`<div class="warn">${w}</div>`).join('');
+
+    document.getElementById('bars').innerHTML=d.proba.map(p=>
+      `<div style="font-size:14px">ระดับ ${p.level} — ${p.name}</div>
+       <div class="bar"><div style="width:${Math.max(p.p*100,3)}%">${(p.p*100).toFixed(1)}%</div></div>`
+    ).join('');
+
+    document.getElementById('stats').innerHTML=
+      `<tr><th>สัดส่วนพื้นที่แผลต่อพื้นที่ใบ</th><td>${(d.lesion_ratio*100).toFixed(2)}%</td></tr>
+       <tr><th>ความหนาแน่นของจุดแผล</th><td>${d.spot_density.toFixed(2)} จุด/10,000 พิกเซล</td></tr>`;
+
+    document.getElementById('vis').src=d.vis;
+    document.getElementById('mask').src=d.mask;
+    document.getElementById('result').style.display='block';
+  }catch(err){
+    document.getElementById('spin').style.display='none';
+    alert('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+  }
+  go.disabled=false;
+};
+</script>
+</body>
+</html>
